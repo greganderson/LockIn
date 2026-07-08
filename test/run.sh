@@ -70,6 +70,12 @@ cat > "$TMP/inject" <<EOF
     rec.indexOf('find the rate limits') > -1 && rec.indexOf('- [x] Authentication') > -1));
   R.push('aria_pressed=' + (q('#adhdy-panel .adhdy-t[aria-pressed="true"]') >= 3 &&
     q('#adhdy-panel .adhdy-t[aria-pressed="false"]') >= 1));
+  var rootStyle = document.documentElement.style;
+  R.push('theme_default=' + (rootStyle.getPropertyValue('--adhdy-accent') === '#14b8a6'));
+  document.querySelectorAll('.adhdy-th')[1].click();
+  R.push('theme_switch=' + (rootStyle.getPropertyValue('--adhdy-accent') === '#7c5cff' &&
+    document.querySelectorAll('.adhdy-th')[1].getAttribute('aria-pressed') === 'true'));
+  R.push('theme_saved=' + (localStorage.getItem('adhdifier-settings').indexOf('"t":"violet"') > -1));
   document.querySelector('.adhdy-tm').click();
   R.push('timer_runs=' + /⏱ \d/.test(document.querySelector('.adhdy-clock').textContent));
   document.querySelector('.adhdy-clock').click();
@@ -77,6 +83,7 @@ cat > "$TMP/inject" <<EOF
   R.push('panel=' + (q('#adhdy-panel') === 1));
   A.destroy();
   R.push('leftovers_gone=' + (q('[class*="adhdy"],[id*="adhdy"]') === 0));
+  R.push('theme_vars_gone=' + (rootStyle.getPropertyValue('--adhdy-accent') === ''));
   var after = document.querySelector('article').innerText.replace(/\s+/g,' ').trim();
   R.push('text_restored=' + (after === window.__origText));
   var pre = document.createElement('pre');
@@ -93,7 +100,7 @@ chromium --headless=new --disable-gpu --virtual-time-budget=3000 \
   | sed -n '/RESULTS_BEGIN/,/RESULTS_END/p' | grep '=' > "$TMP/results"
 
 cat "$TMP/results"
-TOTAL=25
+TOTAL=29
 if grep -q '=false' "$TMP/results" || [ "$(grep -c '=true' "$TMP/results")" -ne "$TOTAL" ]; then
   echo 'FAIL'; exit 1
 fi

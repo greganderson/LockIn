@@ -93,6 +93,7 @@ Then, on any article, click the bookmark. Click it again to hide the panel.</p>
 <tr><th>Calm</th><td>Freezes animations and pauses autoplaying videos.</td></tr>
 <tr><th>10m / 15m / 25m</th><td>Reading sprint timer with a gentle chime — helps with time blindness.</td></tr>
 <tr><th>🎯 Why am I here?</th><td>Write the question you came to answer; it stays pinned in the panel (and is remembered per article).</td></tr>
+<tr><th>Themes</th><td>Five dark color themes — tap the dots at the bottom of the panel.</td></tr>
 </table>
 <p>Comfy has sliders for text size, line spacing, and column width. It also
 remembers how far you scrolled and offers a one-click "jump back to where you

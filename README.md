@@ -33,6 +33,7 @@ and click the bookmark.
 | **Calm** | Pauses all CSS animations/transitions and autoplaying videos. |
 | **Sprint timer** | 10/15/25-minute time-box in the panel with a soft chime at the end. |
 | **🎯 Why am I here?** | An intention-anchor input pinned at the top of the panel, remembered per article. |
+| **Themes** | Five dark themes (Teal, Violet, Ember, Ocean, Rose) — the dots at the bottom of the panel. Each retints the accent *and* the panel's dark neutrals; the choice persists with your other settings. |
 | **Resume** | (Always on.) Remembers scroll position per article; offers a "jump back to where you left off" toast on return. |
 
 Mobile: below 640px the panel becomes a bottom sheet with bigger tap targets,
