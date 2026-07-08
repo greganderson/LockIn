@@ -27,6 +27,7 @@ cat > "$TMP/inject" <<EOF
     {bubbles: true, clientY: Math.max(10, bigP.getBoundingClientRect().top + 10)}));
   R.push('chunk_focus=' + (CSS.highlights.has('adhdy-dim') && CSS.highlights.get('adhdy-dim').size >= 1));
   R.push('chunk_dim_matches=' + (document.getElementById('adhdy-hlstyle').textContent.indexOf('rgba(34,34,34,0.28)') > -1));
+  R.push('nofade_with_chunks=' + (getComputedStyle(bigP).transitionProperty === 'none'));
   A.set('chunks', false);
   R.push('chunk_focus_cleared=' + !CSS.highlights.has('adhdy-dim'));
   A.set('chunks', true);
@@ -79,7 +80,7 @@ chromium --headless=new --disable-gpu --virtual-time-budget=3000 \
   | sed -n '/RESULTS_BEGIN/,/RESULTS_END/p' | grep '=' > "$TMP/results"
 
 cat "$TMP/results"
-TOTAL=19
+TOTAL=20
 if grep -q '=false' "$TMP/results" || [ "$(grep -c '=true' "$TMP/results")" -ne "$TOTAL" ]; then
   echo 'FAIL'; exit 1
 fi

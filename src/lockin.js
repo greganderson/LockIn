@@ -63,6 +63,10 @@
     /* focus spotlight */
     'html.adhdy-focus .adhdy-block{opacity:' + DIM + ';transition:opacity .25s ease}',
     'html.adhdy-focus .adhdy-block.adhdy-cur{opacity:1}',
+    /* With chunk-level focus, block opacity must switch instantly: an
+       animated paragraph fade under the instant chunk highlight makes
+       non-current chunks dip to double-dimmed mid-transition (flicker). */
+    'html.adhdy-nofade .adhdy-block{transition:none}',
     /* bionic bolding */
     'b.adhdy-bio{font-weight:700;color:inherit}',
     /* chunk gaps */
@@ -200,7 +204,9 @@
       hlStyle.textContent = '::highlight(adhdy-dim){color:' + faded + '}';
     }
   }
+  var lastHlBlock = null, lastHlIdx = -1;
   function clearChunkDim() {
+    lastHlBlock = null; lastHlIdx = -1;
     if (canHl) CSS.highlights.delete('adhdy-dim');
   }
   function chunkRanges(p) {
@@ -220,10 +226,9 @@
   }
   function updateChunkDim(y) {
     if (!canHl) return;
-    CSS.highlights.delete('adhdy-dim');
-    if (!curBlock || !state.chunks) return;
+    if (!curBlock || !state.chunks) { clearChunkDim(); return; }
     var ranges = chunkRanges(curBlock);
-    if (!ranges || ranges.length < 2) return;
+    if (!ranges || ranges.length < 2) { clearChunkDim(); return; }
     var bestI = 0, bestD = Infinity;
     ranges.forEach(function (rg, i) {
       var rect = rg.getBoundingClientRect();
@@ -233,6 +238,10 @@
         Math.min(Math.abs(mid - y), Math.abs(rect.top - y));
       if (d < bestD) { bestD = d; bestI = i; }
     });
+    // Same paragraph, same chunk: the registered ranges are live, skip the
+    // rebuild (mousemove calls this constantly).
+    if (curBlock === lastHlBlock && bestI === lastHlIdx) return;
+    lastHlBlock = curBlock; lastHlIdx = bestI;
     setChunkDimColor(curBlock);
     var hl = new Highlight();
     ranges.forEach(function (rg, i) { if (i !== bestI) hl.add(rg); });
@@ -380,9 +389,11 @@
           }
         }
       });
+      if (canHl) html.classList.add('adhdy-nofade');
       if (state.focus) updateChunkDim(innerHeight * 0.38);
     },
     off: function () {
+      html.classList.remove('adhdy-nofade');
       clearChunkDim(); // chunk ranges are about to go stale
       root.querySelectorAll('span.adhdy-gap').forEach(function (g) {
         var p = g.parentNode;
