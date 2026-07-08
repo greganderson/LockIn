@@ -20,13 +20,14 @@ and click the bookmark.
 | Toggle | What it does |
 |---|---|
 | **Focus** | Dims everything except the paragraph you're reading; follows scroll and mouse. With Chunks on, the spotlight narrows to the single chunk you're on (via the CSS Custom Highlight API; older browsers fall back to whole-paragraph highlighting). |
+| **Pager keys** | With Focus on: `j` / `space` step the spotlight forward chunk-by-chunk, `k` / `shift+space` step back, gliding the page as you go. Ignored while typing; at the article's ends space reverts to normal scrolling. |
 | **Ruler** | A reading band that follows the cursor, shading the rest of the page. |
 | **Bionic** | Bolds the first ~40% of each word to give the eye anchor points. |
 | **Chunks** | Splits paragraphs longer than ~240 chars at sentence boundaries. |
 | **Comfy** | Narrow column + relaxed line height, with sliders for text size, line spacing, and column width. |
 | **Declutter** | Hides `nav`/`aside`/`footer`/banner roles and any fixed/sticky overlays. |
 | **Check off** | Adds a ✓ to each h2/h3 — click to collapse the section and mark it done. |
-| **Progress** | Top progress bar + live "≈ N min left" estimate (230 wpm). Confetti at 100%. |
+| **Progress** | Top progress bar + live "≈ N min left" estimate (230 wpm). At 100%: confetti (skipped under `prefers-reduced-motion`) and a **session receipt** — a copyable Markdown summary of time spent, sections checked off, and your "why am I here?" note. Also via the finish toast, the ETA line, or `window.__lockin.receipt()`. |
 | **Map** | Mini table of contents in the panel: ▸ current section, ✓ done (via Check off), · read, ○ unread; click to jump. |
 | **Link guard** | Clicking a link once does nothing (rabbit-hole protection); a second click/tap within 1.5s — or a double-click — follows it. |
 | **Calm** | Pauses all CSS animations/transitions and autoplaying videos. |
@@ -87,4 +88,20 @@ count, section fold, panel present, zero `adhdy` leftovers after destroy, and
 `innerText` byte-identical to the original after destroy.
 
 The public API the tests drive is exactly what the panel buttons call:
-`window.__lockin.set(name, bool)`, `.state()`, `.togglePanel()`, `.destroy()`.
+`window.__lockin.set(name, bool)`, `.state()`, `.receipt()`, `.togglePanel()`,
+`.destroy()`.
+
+## Hosting the install page (GitHub Pages)
+
+The repo is Pages-ready: `index.html` (bookmarklet baked in) and `demo.html`
+are static and self-contained; nothing in `dist/` is needed at runtime.
+
+1. Push to GitHub.
+2. Repo → Settings → Pages → Source "Deploy from a branch" → branch `main`,
+   folder `/ (root)` → Save.
+3. The install page appears at `https://<user>.github.io/<repo>/` within a
+   minute or two; share that link and people can drag the button straight
+   from it.
+
+Pages serves committed files — it does not run the build. After changing
+`src/lockin.js`, run `node build.js` and commit the regenerated `index.html`.

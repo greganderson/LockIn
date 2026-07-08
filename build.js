@@ -80,14 +80,14 @@ Then, on any article, click the bookmark. Click it again to hide the panel.</p>
 
 <h2>What the buttons do</h2>
 <table>
-<tr><th>Focus</th><td>Dims everything except the paragraph you're reading — follows your scroll and mouse.</td></tr>
+<tr><th>Focus</th><td>Dims everything except the paragraph you're reading — follows your scroll and mouse. Keyboard: <code>j</code>/<code>space</code> and <code>k</code> step the spotlight chunk by chunk.</td></tr>
 <tr><th>Ruler</th><td>A reading band that follows your cursor, shading the rest of the page.</td></tr>
 <tr><th>Bionic</th><td>Bolds the first part of each word so your eye has anchors to jump between.</td></tr>
 <tr><th>Chunks</th><td>Splits giant paragraphs into short, breathable pieces.</td></tr>
 <tr><th>Comfy</th><td>Narrow column, taller line spacing — less visual noise per line.</td></tr>
 <tr><th>Declutter</th><td>Hides sidebars, navs, footers, cookie bars, and sticky banners.</td></tr>
 <tr><th>Check off</th><td>Adds a ✓ next to each section heading — click to collapse it and feel the progress.</td></tr>
-<tr><th>Progress</th><td>Progress bar plus a live "≈ N min left" estimate, so the end is always in sight — with confetti when you finish.</td></tr>
+<tr><th>Progress</th><td>Progress bar plus a live "≈ N min left" estimate, so the end is always in sight — with confetti when you finish, and a one-click session receipt (time spent, sections done, your note) to paste into your notes.</td></tr>
 <tr><th>Map</th><td>A mini table of contents in the panel: ▸ where you are, ✓ what's done, click to jump.</td></tr>
 <tr><th>Link guard</th><td>One click on a link does nothing — click it twice when you really mean it. Goodbye, rabbit holes.</td></tr>
 <tr><th>Calm</th><td>Freezes animations and pauses autoplaying videos.</td></tr>

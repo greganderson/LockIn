@@ -14,6 +14,9 @@
   var STORE_KEY = 'adhdifier-settings'; // pre-rename key kept so upgrades keep settings
 
   var doc = document, html = doc.documentElement;
+  var startTime = Date.now(); // for the session receipt
+  var motionOK = !(window.matchMedia &&
+    matchMedia('(prefers-reduced-motion: reduce)').matches);
   var listeners = [];         // [target, type, fn] so teardown can unbind all
 
   function on(target, type, fn, opts) {
@@ -224,6 +227,16 @@
     ranges.push(r);
     return ranges;
   }
+  function applyChunkDim(block, ranges, bestI) {
+    // Same paragraph, same chunk: the registered ranges are live, skip the
+    // rebuild (mousemove calls this constantly).
+    if (block === lastHlBlock && bestI === lastHlIdx) return;
+    lastHlBlock = block; lastHlIdx = bestI;
+    setChunkDimColor(block);
+    var hl = new Highlight();
+    ranges.forEach(function (rg, i) { if (i !== bestI) hl.add(rg); });
+    CSS.highlights.set('adhdy-dim', hl);
+  }
   function updateChunkDim(y) {
     if (!canHl) return;
     if (!curBlock || !state.chunks) { clearChunkDim(); return; }
@@ -238,28 +251,68 @@
         Math.min(Math.abs(mid - y), Math.abs(rect.top - y));
       if (d < bestD) { bestD = d; bestI = i; }
     });
-    // Same paragraph, same chunk: the registered ranges are live, skip the
-    // rebuild (mousemove calls this constantly).
-    if (curBlock === lastHlBlock && bestI === lastHlIdx) return;
-    lastHlBlock = curBlock; lastHlIdx = bestI;
-    setChunkDimColor(curBlock);
-    var hl = new Highlight();
-    ranges.forEach(function (rg, i) { if (i !== bestI) hl.add(rg); });
-    CSS.highlights.set('adhdy-dim', hl);
+    applyChunkDim(curBlock, ranges, bestI);
   }
+
+  // -- keyboard pager: j / k / space step the spotlight chunk by chunk --------
+  var pagerHold = 0; // suppress cursor/scroll re-picking while we glide
+
+  function pagerStep(dir) {
+    if (!blocks.length) return false;
+    var block = (curBlock && blocks.indexOf(curBlock) > -1) ? curBlock
+      : (pickBlockAt(innerHeight * 0.38) || blocks[0]);
+    var useChunks = state.chunks && canHl;
+    var ranges = useChunks ? chunkRanges(block) : null;
+    if (ranges && ranges.length < 2) ranges = null;
+    var ci = (ranges && block === lastHlBlock) ? lastHlIdx
+      : (dir > 0 ? -1 : (ranges ? ranges.length : 1));
+    if (ranges && ci + dir >= 0 && ci + dir < ranges.length) {
+      ci += dir; // next/prev chunk within the same paragraph
+    } else {
+      var bi = blocks.indexOf(block) + dir;
+      if (bi < 0 || bi >= blocks.length) return false;
+      block = blocks[bi];
+      ranges = useChunks ? chunkRanges(block) : null;
+      if (ranges && ranges.length < 2) ranges = null;
+      ci = ranges ? (dir > 0 ? 0 : ranges.length - 1) : 0;
+    }
+    setCur(block);
+    if (ranges) applyChunkDim(block, ranges, ci);
+    else clearChunkDim();
+    var rect = ranges ? ranges[ci].getBoundingClientRect()
+      : block.getBoundingClientRect();
+    pagerHold = Date.now() + 900;
+    try {
+      scrollBy({ top: rect.top - innerHeight * 0.38, behavior: motionOK ? 'smooth' : 'auto' });
+    } catch (e) { scrollBy(0, rect.top - innerHeight * 0.38); }
+    return true;
+  }
+  function pagerKeys(e) {
+    if (!state.focus || e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    if (t && ((t.closest && t.closest('#adhdy-panel')) ||
+        /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '') || t.isContentEditable)) return;
+    var dir = 0;
+    if (e.key === 'j' || (e.key === ' ' && !e.shiftKey)) dir = 1;
+    else if (e.key === 'k' || (e.key === ' ' && e.shiftKey)) dir = -1;
+    else return;
+    if (pagerStep(dir)) e.preventDefault();
+    // at the very start/end pagerStep declines and space keeps its default
+  }
+  on(doc, 'keydown', pagerKeys);
 
   function focusScroll() {
     if (focusRaf) return;
     focusRaf = requestAnimationFrame(function () {
       focusRaf = 0;
-      if (!state.focus) return;
+      if (!state.focus || Date.now() < pagerHold) return;
       var y = innerHeight * 0.38;
       setCur(pickBlockAt(y));
       updateChunkDim(y);
     });
   }
   function focusMove(e) {
-    if (!state.focus) return;
+    if (!state.focus || Date.now() < pagerHold) return;
     var el = e.target && e.target.closest && e.target.closest(BLOCK_SEL);
     if (el && blocks.indexOf(el) > -1) {
       setCur(el);
@@ -299,6 +352,7 @@
     on: function () {
       ruler = doc.createElement('div');
       ruler.id = 'adhdy-ruler';
+      ruler.setAttribute('aria-hidden', 'true');
       ruler.style.top = (innerHeight * 0.35) + 'px';
       doc.body.appendChild(ruler);
     },
@@ -468,9 +522,12 @@
         btn.type = 'button';
         btn.textContent = '✓';
         btn.title = 'Mark section done (collapses it)';
+        btn.setAttribute('aria-label', 'Mark section done');
+        btn.setAttribute('aria-pressed', 'false');
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
           var done = btn.classList.toggle('adhdy-on');
+          btn.setAttribute('aria-pressed', String(done));
           h.classList.toggle('adhdy-done', done);
           sectionEls(h).forEach(function (el) {
             el.classList.toggle('adhdy-folded', done);
@@ -511,6 +568,7 @@
       if (!totalWords) totalWords = countWords();
       bar = doc.createElement('div');
       bar.id = 'adhdy-progress';
+      bar.setAttribute('aria-hidden', 'true');
       doc.body.appendChild(bar);
       if (eta) eta.style.display = '';
       progScroll();
@@ -529,18 +587,61 @@
   function maybeCelebrate(frac) {
     if (!celebrated && lastFrac < 0.99 && frac >= 1) {
       celebrated = true;
-      var emoji = ['🎉', '✨', '⭐', '🎊', '💜'];
-      for (var i = 0; i < 22; i++) {
-        var s = doc.createElement('span');
-        s.className = 'adhdy-confetti';
-        s.textContent = emoji[i % emoji.length];
-        s.style.left = (Math.random() * 100) + 'vw';
-        s.style.animationDelay = (Math.random() * 0.5) + 's';
-        doc.body.appendChild(s);
-        setTimeout(function (el) { el.remove(); }.bind(null, s), 2600);
+      if (motionOK) {
+        var emoji = ['🎉', '✨', '⭐', '🎊', '💜'];
+        for (var i = 0; i < 22; i++) {
+          var s = doc.createElement('span');
+          s.className = 'adhdy-confetti';
+          s.setAttribute('aria-hidden', 'true');
+          s.textContent = emoji[i % emoji.length];
+          s.style.left = (Math.random() * 100) + 'vw';
+          s.style.animationDelay = (Math.random() * 0.5) + 's';
+          doc.body.appendChild(s);
+          setTimeout(function (el) { el.remove(); }.bind(null, s), 2600);
+        }
       }
+      if (eta) { eta.style.cursor = 'pointer'; eta.title = 'Copy your session receipt'; }
+      var t = toast('🎉 You finished! Click here to copy a session receipt for your notes.');
+      t.__act = copyReceipt;
     }
     lastFrac = frac;
+  }
+
+  /* -------------------------------------------------------- session receipt */
+
+  function buildReceipt() {
+    var lines = ['# ' + (doc.title || 'Article').trim(), ''];
+    var why = note.value.trim();
+    if (why) lines.push('🎯 Why I was here: ' + why);
+    var mins = Math.max(1, Math.round((Date.now() - startTime) / 60000));
+    lines.push('⏱ Session: ~' + mins + ' min · ~' + (totalWords || countWords()) + ' words');
+    var done = [];
+    root.querySelectorAll('h2.adhdy-done,h3.adhdy-done').forEach(function (h) {
+      done.push(h.textContent.replace(/^✓\s*/, '').trim());
+    });
+    if (done.length) {
+      lines.push('', '## Sections checked off');
+      done.forEach(function (t) { lines.push('- [x] ' + t); });
+    }
+    lines.push('', '🔗 ' + location.href);
+    return lines.join('\n');
+  }
+  function legacyCopy(text) {
+    var ta = doc.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    doc.body.appendChild(ta);
+    ta.select();
+    try { doc.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  function copyReceipt() {
+    var text = buildReceipt();
+    var ok = function () { toast('📋 Receipt copied — paste it into your notes.'); };
+    try {
+      navigator.clipboard.writeText(text).then(ok, function () { legacyCopy(text); ok(); });
+    } catch (e) { legacyCopy(text); ok(); }
   }
 
   /* ---------------------------------------------------------------- toast */
@@ -550,6 +651,7 @@
     if (!toastEl) {
       toastEl = doc.createElement('div');
       toastEl.id = 'adhdy-toast';
+      toastEl.setAttribute('role', 'status');
       toastEl.addEventListener('click', function () {
         toastEl.style.display = 'none';
         if (toastEl.__act) { var a = toastEl.__act; toastEl.__act = null; a(); }
@@ -641,6 +743,8 @@
         var row = doc.createElement('div');
         row.className = 'adhdy-mrow' + (h.tagName === 'H3' ? ' adhdy-sub' : '');
         row.title = t;
+        row.setAttribute('role', 'button');
+        row.setAttribute('tabindex', '0');
         row.addEventListener('click', function () {
           try { h.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
           catch (e) { h.scrollIntoView(); }
@@ -710,10 +814,18 @@
                'sections', 'progress', 'map', 'guard', 'calm'];
   var panel = doc.createElement('div');
   panel.id = 'adhdy-panel';
+  panel.setAttribute('role', 'region');
+  panel.setAttribute('aria-label', 'LockIn reading tools');
   var mini = doc.createElement('div');
   mini.id = 'adhdy-mini';
   mini.textContent = '🧠';
   mini.title = 'LockIn';
+  mini.setAttribute('role', 'button');
+  mini.setAttribute('tabindex', '0');
+  mini.setAttribute('aria-label', 'Open the LockIn panel');
+  mini.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); mini.click(); }
+  });
 
   var head = doc.createElement('div');
   head.className = 'adhdy-head';
@@ -755,6 +867,7 @@
     b.className = 'adhdy-t';
     b.type = 'button';
     b.textContent = features[name].label;
+    b.setAttribute('aria-pressed', 'false');
     b.addEventListener('click', function () { setFeature(name, !state[name]); });
     btns[name] = b;
     grid.appendChild(b);
@@ -812,11 +925,20 @@
 
   mapEl = doc.createElement('div');
   mapEl.id = 'adhdy-map';
+  mapEl.setAttribute('aria-label', 'Section map');
+  mapEl.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('adhdy-mrow')) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
   panel.appendChild(mapEl);
 
   eta = doc.createElement('div');
   eta.className = 'adhdy-eta';
   eta.style.display = 'none';
+  eta.setAttribute('aria-live', 'off');
+  eta.addEventListener('click', function () { if (celebrated) copyReceipt(); });
   panel.appendChild(eta);
 
   doc.body.appendChild(panel);
@@ -841,6 +963,7 @@
     try { val ? features[name].on() : features[name].off(); }
     catch (err) { state[name] = false; }
     btns[name].classList.toggle('adhdy-on', state[name]);
+    btns[name].setAttribute('aria-pressed', String(state[name]));
     if (!skipSave) save();
   }
 
@@ -870,6 +993,7 @@
   window.__lockin = {
     set: setFeature,
     state: function () { return Object.assign({}, state); },
+    receipt: buildReceipt,
     togglePanel: function () {
       var hidden = panel.style.display === 'none' && mini.style.display === 'none';
       if (hidden) { panel.style.display = 'block'; }

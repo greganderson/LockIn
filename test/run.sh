@@ -28,6 +28,8 @@ cat > "$TMP/inject" <<EOF
   R.push('chunk_focus=' + (CSS.highlights.has('adhdy-dim') && CSS.highlights.get('adhdy-dim').size >= 1));
   R.push('chunk_dim_matches=' + (document.getElementById('adhdy-hlstyle').textContent.indexOf('rgba(34,34,34,0.28)') > -1));
   R.push('nofade_with_chunks=' + (getComputedStyle(bigP).transitionProperty === 'none'));
+  var kev = new KeyboardEvent('keydown', {key: 'j', bubbles: true, cancelable: true});
+  R.push('pager_step=' + !document.dispatchEvent(kev));
   A.set('chunks', false);
   R.push('chunk_focus_cleared=' + !CSS.highlights.has('adhdy-dim'));
   A.set('chunks', true);
@@ -57,6 +59,11 @@ cat > "$TMP/inject" <<EOF
   noteEl.value = 'find the rate limits';
   noteEl.dispatchEvent(new Event('input'));
   R.push('note_saved=' + (localStorage.getItem('adhdy-note:' + location.host + location.pathname) === 'find the rate limits'));
+  var rec = A.receipt();
+  R.push('receipt=' + (rec.indexOf('Widget REST API') > -1 &&
+    rec.indexOf('find the rate limits') > -1 && rec.indexOf('- [x] Authentication') > -1));
+  R.push('aria_pressed=' + (q('#adhdy-panel .adhdy-t[aria-pressed="true"]') >= 3 &&
+    q('#adhdy-panel .adhdy-t[aria-pressed="false"]') >= 1));
   document.querySelector('.adhdy-tm').click();
   R.push('timer_runs=' + /⏱ \d/.test(document.querySelector('.adhdy-clock').textContent));
   document.querySelector('.adhdy-clock').click();
@@ -80,7 +87,7 @@ chromium --headless=new --disable-gpu --virtual-time-budget=3000 \
   | sed -n '/RESULTS_BEGIN/,/RESULTS_END/p' | grep '=' > "$TMP/results"
 
 cat "$TMP/results"
-TOTAL=20
+TOTAL=23
 if grep -q '=false' "$TMP/results" || [ "$(grep -c '=true' "$TMP/results")" -ne "$TOTAL" ]; then
   echo 'FAIL'; exit 1
 fi
