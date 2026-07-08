@@ -49,11 +49,11 @@ const page = `<!DOCTYPE html>
   h1 { font-size: 2rem; }
   .drag {
     display: inline-block; padding: .8rem 1.6rem; border-radius: 12px;
-    background: #7c5cff; color: #fff; font-weight: 700; font-size: 1.15rem;
-    text-decoration: none; box-shadow: 0 4px 14px rgba(124,92,255,.4); cursor: grab;
+    background: #14b8a6; color: #052e28; font-weight: 700; font-size: 1.15rem;
+    text-decoration: none; box-shadow: 0 4px 14px rgba(20,184,166,.4); cursor: grab;
   }
   .hint { color: #888; font-size: .9rem; }
-  code { background: rgba(124,92,255,.12); padding: .1em .35em; border-radius: 5px; }
+  code { background: rgba(20,184,166,.12); padding: .1em .35em; border-radius: 5px; }
   table { border-collapse: collapse; width: 100%; }
   td, th { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid rgba(128,128,128,.25); }
   details { margin: 1rem 0; }
