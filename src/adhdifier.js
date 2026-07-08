@@ -62,13 +62,17 @@
     /* focus spotlight */
     'html.adhdy-focus .adhdy-block{opacity:.28;transition:opacity .25s ease}',
     'html.adhdy-focus .adhdy-block.adhdy-cur{opacity:1}',
+    /* chunk-level focus: non-current chunks of the current paragraph get
+       faded text via the Custom Highlight API (paint-only, no DOM change).
+       The rgba line is a fallback for browsers without color-mix. */
+    '::highlight(adhdy-dim){color:rgba(150,150,150,.6);color:color-mix(in srgb,currentColor 28%,transparent)}',
     /* bionic bolding */
     'b.adhdy-bio{font-weight:700;color:inherit}',
     /* chunk gaps */
     'span.adhdy-gap{display:block;height:.8em}',
-    /* comfy text */
-    '.adhdy-comfy{max-width:70ch!important;margin-left:auto!important;margin-right:auto!important;float:none!important}',
-    '.adhdy-comfy :is(p,li,dd,blockquote){line-height:1.8!important;font-size:1.05em}',
+    /* comfy text — tuned by the panel sliders via CSS variables */
+    '.adhdy-comfy{max-width:var(--adhdy-w,70ch)!important;margin-left:auto!important;margin-right:auto!important;float:none!important}',
+    '.adhdy-comfy :is(p,li,dd,blockquote){line-height:var(--adhdy-lh,1.8)!important;font-size:var(--adhdy-fs,1.05em)}',
     /* declutter */
     'html.adhdy-clean :is(nav,aside,footer,[role=navigation],[role=complementary],[role=banner]),html.adhdy-clean .adhdy-hidefixed{display:none!important}',
     /* section fold */
@@ -80,8 +84,6 @@
     '#adhdy-progress{position:fixed;top:0;left:0;height:4px;width:0;background:' + ACCENT + ';z-index:2147483645;transition:width .1s linear}',
     /* reading ruler */
     '#adhdy-ruler{position:fixed;left:0;width:100vw;height:96px;pointer-events:none;z-index:2147483640;box-shadow:0 0 0 200vmax rgba(15,12,35,.32);border-top:1px solid rgba(124,92,255,.55);border-bottom:1px solid rgba(124,92,255,.55)}',
-    /* listen (TTS) highlight */
-    '.adhdy-speak{background:rgba(124,92,255,.16)!important;outline:2px solid rgba(124,92,255,.5);border-radius:4px}',
     /* link guard */
     'html.adhdy-guard a[href]{color:inherit!important;text-decoration:underline dotted rgba(124,92,255,.65)!important}',
     /* calm — freeze motion (confetti exempted below) */
@@ -108,7 +110,34 @@
     '#adhdy-panel .adhdy-tm{cursor:pointer;border:1px solid #3a3355;background:#2a2542;color:#cfc9e8;border-radius:8px;padding:4px 0;font-size:11px;flex:1;text-align:center}',
     '#adhdy-panel .adhdy-tm:hover{border-color:' + ACCENT + '}',
     '#adhdy-panel .adhdy-clock{flex:1.4;text-align:center;font-size:12px;color:#a49ec4;cursor:pointer}',
-    '#adhdy-mini{all:initial;position:fixed;top:16px;right:16px;z-index:2147483646;width:40px;height:40px;border-radius:50%;background:' + ACCENT + ';color:#fff;font:20px/40px system-ui;text-align:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);display:none}'
+    /* "why am I here?" note */
+    '#adhdy-note{width:100%;margin-bottom:10px;background:#2a2542;border:1px solid #3a3355;border-radius:8px;color:#eceaf6;font-size:12px;padding:6px 8px}',
+    '#adhdy-note::placeholder{color:#6f6a8a}',
+    '#adhdy-note:focus{outline:none;border-color:' + ACCENT + '}',
+    /* comfy sliders */
+    '#adhdy-sliders{margin-top:8px;display:none}',
+    '#adhdy-sliders label{display:flex;align-items:center;gap:8px;font-size:11px;color:#a49ec4;margin-top:4px;cursor:pointer}',
+    '#adhdy-sliders span{width:14px;text-align:center}',
+    '#adhdy-sliders input{flex:1;accent-color:' + ACCENT + ';margin:0;min-width:0}',
+    /* section map */
+    '#adhdy-map{margin-top:8px;max-height:180px;overflow-y:auto;border-top:1px solid #3a3355;padding-top:6px;display:none}',
+    '#adhdy-map .adhdy-mrow{cursor:pointer;padding:3px 6px;border-radius:6px;font-size:12px;color:#cfc9e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '#adhdy-map .adhdy-mrow:hover{background:#332c4f;color:#fff}',
+    '#adhdy-map .adhdy-mrow.adhdy-sub{padding-left:20px}',
+    '#adhdy-map .adhdy-mrow.adhdy-read{color:#6f6a8a}',
+    '#adhdy-map .adhdy-mrow.adhdy-now{background:rgba(124,92,255,.28);color:#fff;font-weight:600}',
+    '#adhdy-mini{all:initial;position:fixed;top:16px;right:16px;z-index:2147483646;width:40px;height:40px;border-radius:50%;background:' + ACCENT + ';color:#fff;font:20px/40px system-ui;text-align:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);display:none}',
+    /* mobile: panel becomes a bottom sheet, toast moves to the top */
+    '@media (max-width:640px){' +
+      '#adhdy-panel{top:auto;bottom:10px;left:10px;right:10px;width:auto;max-height:60vh;overflow-y:auto}' +
+      '#adhdy-panel .adhdy-grid{grid-template-columns:1fr 1fr 1fr}' +
+      '#adhdy-panel .adhdy-t{padding:10px 4px;font-size:13px}' +
+      '#adhdy-panel .adhdy-tm{padding:9px 0;font-size:12px}' +
+      '#adhdy-panel .adhdy-x{font-size:19px;padding:4px 10px}' +
+      '#adhdy-map{max-height:130px}' +
+      '#adhdy-mini{top:auto;bottom:16px;width:48px;height:48px;font:24px/48px system-ui}' +
+      '#adhdy-toast{bottom:auto;top:12px;left:12px;right:12px;max-width:none}' +
+    '}'
   ].join('\n');
   doc.head.appendChild(style);
 
@@ -151,17 +180,67 @@
     curBlock = el;
     if (curBlock) curBlock.classList.add('adhdy-cur');
   }
+
+  // When Chunks has split the current paragraph, narrow the spotlight to one
+  // chunk: paint the paragraph's other chunks with faded text via the Custom
+  // Highlight API. Paint-only — no DOM mutation, so reversibility holds.
+  // Browsers without the API keep whole-paragraph highlighting.
+  var canHl = typeof Highlight === 'function' && window.CSS && CSS.highlights;
+  function clearChunkDim() {
+    if (canHl) CSS.highlights.delete('adhdy-dim');
+  }
+  function chunkRanges(p) {
+    var gaps = p.querySelectorAll('span.adhdy-gap');
+    if (!gaps.length) return null;
+    var ranges = [], r = doc.createRange();
+    r.setStart(p, 0);
+    gaps.forEach(function (g) {
+      r.setEndBefore(g);
+      ranges.push(r);
+      r = doc.createRange();
+      r.setStartAfter(g);
+    });
+    r.setEnd(p, p.childNodes.length);
+    ranges.push(r);
+    return ranges;
+  }
+  function updateChunkDim(y) {
+    if (!canHl) return;
+    CSS.highlights.delete('adhdy-dim');
+    if (!curBlock || !state.chunks) return;
+    var ranges = chunkRanges(curBlock);
+    if (!ranges || ranges.length < 2) return;
+    var bestI = 0, bestD = Infinity;
+    ranges.forEach(function (rg, i) {
+      var rect = rg.getBoundingClientRect();
+      if (!rect.height) return;
+      var mid = (rect.top + rect.bottom) / 2;
+      var d = (y >= rect.top && y <= rect.bottom) ? 0 :
+        Math.min(Math.abs(mid - y), Math.abs(rect.top - y));
+      if (d < bestD) { bestD = d; bestI = i; }
+    });
+    var hl = new Highlight();
+    ranges.forEach(function (rg, i) { if (i !== bestI) hl.add(rg); });
+    CSS.highlights.set('adhdy-dim', hl);
+  }
+
   function focusScroll() {
     if (focusRaf) return;
     focusRaf = requestAnimationFrame(function () {
       focusRaf = 0;
-      if (state.focus) setCur(pickBlockAt(innerHeight * 0.38));
+      if (!state.focus) return;
+      var y = innerHeight * 0.38;
+      setCur(pickBlockAt(y));
+      updateChunkDim(y);
     });
   }
   function focusMove(e) {
     if (!state.focus) return;
     var el = e.target && e.target.closest && e.target.closest(BLOCK_SEL);
-    if (el && blocks.indexOf(el) > -1) setCur(el);
+    if (el && blocks.indexOf(el) > -1) {
+      setCur(el);
+      updateChunkDim(e.clientY);
+    }
   }
   features.focus = {
     label: 'Focus',
@@ -169,11 +248,14 @@
       blocks = collectLeafBlocks();
       blocks.forEach(function (el) { el.classList.add('adhdy-block'); });
       html.classList.add('adhdy-focus');
-      setCur(pickBlockAt(innerHeight * 0.38));
+      var y = innerHeight * 0.38;
+      setCur(pickBlockAt(y));
+      updateChunkDim(y);
     },
     off: function () {
       html.classList.remove('adhdy-focus');
       setCur(null);
+      clearChunkDim();
       blocks.forEach(function (el) { el.classList.remove('adhdy-block'); });
       blocks = [];
     }
@@ -184,7 +266,9 @@
   // -- reading ruler --------------------------------------------------------
   var ruler = null;
   function rulerMove(e) {
-    if (ruler) ruler.style.top = (e.clientY - 48) + 'px';
+    if (!ruler) return;
+    var y = e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY;
+    if (typeof y === 'number') ruler.style.top = (y - 48) + 'px';
   }
   features.ruler = {
     label: 'Ruler',
@@ -197,6 +281,7 @@
     off: function () { if (ruler) ruler.remove(); ruler = null; }
   };
   on(doc, 'mousemove', rulerMove, { passive: true });
+  on(doc, 'touchmove', rulerMove, { passive: true });
 
   // -- bionic bolding -------------------------------------------------------
   function textNodesUnder(el, skipSel) {
@@ -280,8 +365,10 @@
           }
         }
       });
+      if (state.focus) updateChunkDim(innerHeight * 0.38);
     },
     off: function () {
+      clearChunkDim(); // chunk ranges are about to go stale
       root.querySelectorAll('span.adhdy-gap').forEach(function (g) {
         var p = g.parentNode;
         g.remove();
@@ -291,10 +378,27 @@
   };
 
   // -- comfy text -----------------------------------------------------------
+  var PREFS_DEF = { fs: 1.05, lh: 1.8, w: 70 };
+  var prefs = Object.assign({}, PREFS_DEF);
+  function applyPrefs() {
+    root.style.setProperty('--adhdy-fs', prefs.fs + 'em');
+    root.style.setProperty('--adhdy-lh', prefs.lh);
+    root.style.setProperty('--adhdy-w', prefs.w + 'ch');
+  }
   features.comfy = {
     label: 'Comfy',
-    on: function () { root.classList.add('adhdy-comfy'); },
-    off: function () { root.classList.remove('adhdy-comfy'); }
+    on: function () {
+      applyPrefs();
+      root.classList.add('adhdy-comfy');
+      sliders.style.display = 'block';
+    },
+    off: function () {
+      root.classList.remove('adhdy-comfy');
+      ['--adhdy-fs', '--adhdy-lh', '--adhdy-w'].forEach(function (v) {
+        root.style.removeProperty(v);
+      });
+      sliders.style.display = 'none';
+    }
   };
 
   // -- declutter ------------------------------------------------------------
@@ -345,6 +449,7 @@
           sectionEls(h).forEach(function (el) {
             el.classList.toggle('adhdy-folded', done);
           });
+          updateMap();
         });
         h.insertBefore(btn, h.firstChild);
       });
@@ -433,65 +538,23 @@
     return toastEl;
   }
 
-  // -- listen (text-to-speech) ------------------------------------------------
-  var synth = window.speechSynthesis || null;
-  var speakList = [], speakIdx = 0, speaking = false;
-  function unmarkSpoken() {
-    root.querySelectorAll('.adhdy-speak').forEach(function (el) {
-      el.classList.remove('adhdy-speak');
-    });
-  }
-  function speakNext() {
-    if (!speaking) return;
-    unmarkSpoken();
-    if (speakIdx >= speakList.length) { setFeature('listen', false); return; }
-    var el = speakList[speakIdx];
-    el.classList.add('adhdy-speak');
-    try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
-    // Speak sentence-by-sentence: long utterances get silently cut off in
-    // Chrome, and per-sentence chunks keep pause/stop responsive.
-    var text = el.innerText || '';
-    var sentences = text.match(/[^.!?]+[.!?]*["'’”)]*\s*/g) || [text];
-    var qi = 0;
-    (function say() {
-      if (!speaking) return;
-      if (qi >= sentences.length) { speakIdx++; speakNext(); return; }
-      var chunk = sentences[qi++].trim();
-      if (!chunk) { say(); return; }
-      var u = new SpeechSynthesisUtterance(chunk);
-      u.rate = 1.05;
-      u.onend = say;
-      u.onerror = function () { if (speaking) say(); };
-      synth.speak(u);
-    })();
-  }
-  features.listen = {
-    label: 'Listen',
-    on: function () {
-      if (!synth) { toast('This browser has no text-to-speech voice.'); throw new Error('no tts'); }
-      speakList = collectLeafBlocks();
-      var start = pickFrom(speakList, innerHeight * 0.38);
-      speakIdx = Math.max(0, speakList.indexOf(start));
-      speaking = true;
-      synth.cancel();
-      speakNext();
-    },
-    off: function () {
-      speaking = false;
-      if (synth) synth.cancel();
-      unmarkSpoken();
-    }
-  };
-
   // -- link guard -------------------------------------------------------------
-  var guardHinted = false;
+  // A second click/tap on the same link within 1.5s follows it — double-click
+  // works on desktop, and a deliberate re-tap works on touch screens.
+  var guardHinted = false, guardLast = null, guardLastT = 0;
   function guardClick(e) {
     if (!state.guard) return;
     var a = e.target && e.target.closest && e.target.closest('a[href]');
-    if (!a || a.closest('#adhdy-panel') || e.detail >= 2) return;
+    if (!a || a.closest('#adhdy-panel')) return;
+    var now = Date.now();
+    if (e.detail >= 2 || (guardLast === a && now - guardLastT < 1500)) {
+      guardLast = null;
+      return;
+    }
+    guardLast = a; guardLastT = now;
     e.preventDefault();
     e.stopPropagation();
-    if (!guardHinted) { guardHinted = true; toast('🐇 Link guard: double-click a link when you really mean it.'); }
+    if (!guardHinted) { guardHinted = true; toast('🐇 Link guard: click a link twice when you really mean it.'); }
   }
   features.guard = {
     label: 'Link guard',
@@ -517,6 +580,58 @@
       pausedVids = [];
     }
   };
+
+  // -- section map ------------------------------------------------------------
+  var mapEl = null, mapRows = [], mapRaf = 0;
+  function updateMap() {
+    if (!state.map || !mapRows.length) return;
+    var y = innerHeight * 0.4, curIdx = -1;
+    for (var i = 0; i < mapRows.length; i++) {
+      if (mapRows[i].h.getBoundingClientRect().top < y) curIdx = i;
+    }
+    mapRows.forEach(function (m, i) {
+      var done = m.h.classList.contains('adhdy-done');
+      var past = curIdx > -1 && i < curIdx;
+      m.row.classList.toggle('adhdy-now', i === curIdx);
+      m.row.classList.toggle('adhdy-read', done || past);
+      m.row.textContent =
+        (done ? '✓ ' : i === curIdx ? '▸ ' : past ? '· ' : '○ ') + m.title;
+    });
+  }
+  function mapScroll() {
+    if (mapRaf) return;
+    mapRaf = requestAnimationFrame(function () { mapRaf = 0; updateMap(); });
+  }
+  features.map = {
+    label: 'Map',
+    on: function () {
+      mapRows = [];
+      mapEl.textContent = '';
+      root.querySelectorAll('h2,h3').forEach(function (h) {
+        if (h.closest('#adhdy-panel')) return;
+        // strip the Check off feature's "✓" glyph from the title
+        var t = h.textContent.replace(/^✓\s*/, '').trim();
+        if (!t) return;
+        var row = doc.createElement('div');
+        row.className = 'adhdy-mrow' + (h.tagName === 'H3' ? ' adhdy-sub' : '');
+        row.title = t;
+        row.addEventListener('click', function () {
+          try { h.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+          catch (e) { h.scrollIntoView(); }
+        });
+        mapRows.push({ h: h, row: row, title: t });
+        mapEl.appendChild(row);
+      });
+      mapEl.style.display = 'block';
+      updateMap();
+    },
+    off: function () {
+      mapEl.style.display = 'none';
+      mapEl.textContent = '';
+      mapRows = [];
+    }
+  };
+  on(window, 'scroll', mapScroll, { passive: true });
 
   /* --------------------------------------------------------- sprint timer */
 
@@ -566,7 +681,7 @@
   /* ----------------------------------------------------------------- panel */
 
   var ORDER = ['focus', 'ruler', 'bionic', 'chunks', 'comfy', 'clean',
-               'sections', 'progress', 'listen', 'guard', 'calm'];
+               'sections', 'progress', 'map', 'guard', 'calm'];
   var panel = doc.createElement('div');
   panel.id = 'adhdy-panel';
   var mini = doc.createElement('div');
@@ -590,6 +705,22 @@
   head.appendChild(title); head.appendChild(minBtn); head.appendChild(closeBtn);
   panel.appendChild(head);
 
+  // "Why am I here?" — an intention anchor, remembered per article.
+  var NOTE_KEY = 'adhdy-note:' + location.host + location.pathname;
+  var note = doc.createElement('input');
+  note.id = 'adhdy-note';
+  note.type = 'text';
+  note.placeholder = '🎯 Why am I here?';
+  note.title = 'Write down what you came to find out — it stays pinned here.';
+  try { note.value = localStorage.getItem(NOTE_KEY) || ''; } catch (e) {}
+  note.addEventListener('input', function () {
+    try {
+      if (note.value.trim()) localStorage.setItem(NOTE_KEY, note.value);
+      else localStorage.removeItem(NOTE_KEY);
+    } catch (e) {}
+  });
+  panel.appendChild(note);
+
   var grid = doc.createElement('div');
   grid.className = 'adhdy-grid';
   var btns = {};
@@ -603,6 +734,33 @@
     grid.appendChild(b);
   });
   panel.appendChild(grid);
+
+  var sliders = doc.createElement('div');
+  sliders.id = 'adhdy-sliders';
+  var slInputs = {};
+  [{ key: 'fs', icon: 'A',  min: 0.9, max: 1.4, step: 0.05, name: 'Text size' },
+   { key: 'lh', icon: '↕', min: 1.4, max: 2.4, step: 0.1,  name: 'Line spacing' },
+   { key: 'w',  icon: '⇔', min: 45,  max: 95,  step: 5,    name: 'Column width' }
+  ].forEach(function (s) {
+    var lab = doc.createElement('label');
+    lab.title = s.name;
+    var ic = doc.createElement('span');
+    ic.textContent = s.icon;
+    var inp = doc.createElement('input');
+    inp.type = 'range';
+    inp.min = s.min; inp.max = s.max; inp.step = s.step;
+    inp.value = prefs[s.key];
+    inp.setAttribute('aria-label', s.name);
+    inp.addEventListener('input', function () {
+      prefs[s.key] = +inp.value;
+      applyPrefs();
+      save();
+    });
+    slInputs[s.key] = inp;
+    lab.appendChild(ic); lab.appendChild(inp);
+    sliders.appendChild(lab);
+  });
+  panel.appendChild(sliders);
 
   var row = doc.createElement('div');
   row.className = 'adhdy-row';
@@ -625,6 +783,10 @@
   });
   row.appendChild(clock);
   panel.appendChild(row);
+
+  mapEl = doc.createElement('div');
+  mapEl.id = 'adhdy-map';
+  panel.appendChild(mapEl);
 
   eta = doc.createElement('div');
   eta.className = 'adhdy-eta';
@@ -657,18 +819,22 @@
   }
 
   function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ f: state, p: prefs }));
+    } catch (e) {}
   }
   function load() {
-    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || null; }
-    catch (e) { return null; }
+    try {
+      var v = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (!v) return null;
+      return v.f ? v : { f: v, p: null }; // migrate pre-slider flat format
+    } catch (e) { return null; }
   }
 
   function destroy() {
     ORDER.forEach(function (n) { if (state[n]) { try { features[n].off(); } catch (e) {} } });
     listeners.forEach(function (l) { l[0].removeEventListener(l[1], l[2], l[3]); });
     stopTimer();
-    if (synth) { try { synth.cancel(); } catch (e) {} }
     doc.querySelectorAll('.adhdy-confetti').forEach(function (el) { el.remove(); });
     if (toastEl) toastEl.remove();
     panel.remove(); mini.remove(); style.remove();
@@ -715,13 +881,19 @@
     };
   })();
 
-  // Restore last-used toggles, or start with a friendly default set.
-  // 'listen' never auto-restores: speech needs a user gesture anyway.
+  // Restore last-used toggles and slider prefs, or start with a friendly
+  // default set.
   var saved = load();
-  if (saved) {
-    ORDER.forEach(function (n) {
-      if (saved[n] && n !== 'listen') setFeature(n, true, true);
+  if (saved && saved.p) {
+    Object.keys(PREFS_DEF).forEach(function (k) {
+      if (typeof saved.p[k] === 'number') {
+        prefs[k] = saved.p[k];
+        slInputs[k].value = prefs[k];
+      }
     });
+  }
+  if (saved) {
+    ORDER.forEach(function (n) { if (saved.f[n]) setFeature(n, true, true); });
   } else {
     ['progress', 'comfy'].forEach(function (n) { setFeature(n, true, true); });
   }

@@ -88,13 +88,17 @@ Then, on any article, click the bookmark. Click it again to hide the panel.</p>
 <tr><th>Declutter</th><td>Hides sidebars, navs, footers, cookie bars, and sticky banners.</td></tr>
 <tr><th>Check off</th><td>Adds a ✓ next to each section heading — click to collapse it and feel the progress.</td></tr>
 <tr><th>Progress</th><td>Progress bar plus a live "≈ N min left" estimate, so the end is always in sight — with confetti when you finish.</td></tr>
-<tr><th>Listen</th><td>Reads the article aloud (built-in browser voice), highlighting and scrolling as it goes. Starts from wherever you are.</td></tr>
-<tr><th>Link guard</th><td>Single clicks on links do nothing — double-click to actually follow one. Goodbye, rabbit holes.</td></tr>
+<tr><th>Map</th><td>A mini table of contents in the panel: ▸ where you are, ✓ what's done, click to jump.</td></tr>
+<tr><th>Link guard</th><td>One click on a link does nothing — click it twice when you really mean it. Goodbye, rabbit holes.</td></tr>
 <tr><th>Calm</th><td>Freezes animations and pauses autoplaying videos.</td></tr>
 <tr><th>10m / 15m / 25m</th><td>Reading sprint timer with a gentle chime — helps with time blindness.</td></tr>
+<tr><th>🎯 Why am I here?</th><td>Write the question you came to answer; it stays pinned in the panel (and is remembered per article).</td></tr>
 </table>
-<p>It also remembers how far you scrolled and offers a one-click
-"jump back to where you left off" when you come back to an article.</p>
+<p>Comfy has sliders for text size, line spacing, and column width. It also
+remembers how far you scrolled and offers a one-click "jump back to where you
+left off" when you come back to an article. On phones the panel becomes a
+bottom sheet — install by editing any bookmark and pasting the code above as
+its URL.</p>
 <p>Your toggles are remembered per site. The <b>×</b> button undoes everything and removes the tool from the page.</p>
 
 <h2>Try it</h2>

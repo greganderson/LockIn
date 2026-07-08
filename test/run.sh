@@ -21,6 +21,15 @@ cat > "$TMP/inject" <<EOF
   A.set('bionic', true); A.set('chunks', true);
   R.push('gaps_after_bionic=' + (q('span.adhdy-gap') > 3));
   R.push('bionic_bolds=' + (q('b.adhdy-bio') > 100));
+  A.set('focus', true);
+  var bigP = document.querySelector('article p');
+  bigP.dispatchEvent(new MouseEvent('mousemove',
+    {bubbles: true, clientY: Math.max(10, bigP.getBoundingClientRect().top + 10)}));
+  R.push('chunk_focus=' + (CSS.highlights.has('adhdy-dim') && CSS.highlights.get('adhdy-dim').size >= 1));
+  A.set('chunks', false);
+  R.push('chunk_focus_cleared=' + !CSS.highlights.has('adhdy-dim'));
+  A.set('chunks', true);
+  A.set('focus', false);
   A.set('sections', true);
   document.querySelector('button.adhdy-check').click();
   R.push('folded=' + (q('.adhdy-folded') > 0));
@@ -34,10 +43,18 @@ cat > "$TMP/inject" <<EOF
   R.push('guard_dblclick_allows=' + !ev2.defaultPrevented);
   A.set('calm', true);
   R.push('calm=' + document.documentElement.classList.contains('adhdy-calm'));
-  A.set('listen', true);
-  R.push('listen_highlight=' + (A.state().listen ? q('.adhdy-speak') === 1 : 'skipped_no_tts'));
-  A.set('listen', false);
-  R.push('listen_off=' + (q('.adhdy-speak') === 0));
+  A.set('comfy', true);
+  var fsSlider = document.querySelector('#adhdy-sliders input');
+  fsSlider.value = 1.2;
+  fsSlider.dispatchEvent(new Event('input'));
+  R.push('comfy_slider=' + (document.querySelector('article').style.getPropertyValue('--adhdy-fs') === '1.2em'));
+  A.set('map', true);
+  R.push('map_rows=' + (q('#adhdy-map .adhdy-mrow') >= 5));
+  R.push('map_done_mark=' + /✓/.test(document.querySelector('#adhdy-map .adhdy-mrow').textContent));
+  var noteEl = document.getElementById('adhdy-note');
+  noteEl.value = 'find the rate limits';
+  noteEl.dispatchEvent(new Event('input'));
+  R.push('note_saved=' + (localStorage.getItem('adhdy-note:' + location.host + location.pathname) === 'find the rate limits'));
   document.querySelector('.adhdy-tm').click();
   R.push('timer_runs=' + /⏱ \d/.test(document.querySelector('.adhdy-clock').textContent));
   document.querySelector('.adhdy-clock').click();
@@ -61,8 +78,8 @@ chromium --headless=new --disable-gpu --virtual-time-budget=3000 \
   | sed -n '/RESULTS_BEGIN/,/RESULTS_END/p' | grep '=' > "$TMP/results"
 
 cat "$TMP/results"
-TOTAL=14
-if grep -q '=false' "$TMP/results" || [ "$(grep -cE '=(true|skipped_no_tts)' "$TMP/results")" -ne "$TOTAL" ]; then
+TOTAL=18
+if grep -q '=false' "$TMP/results" || [ "$(grep -c '=true' "$TMP/results")" -ne "$TOTAL" ]; then
   echo 'FAIL'; exit 1
 fi
 echo "PASS ($TOTAL/$TOTAL)"
