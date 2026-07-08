@@ -28,8 +28,14 @@ cat > "$TMP/inject" <<EOF
   R.push('chunk_focus=' + (CSS.highlights.has('adhdy-dim') && CSS.highlights.get('adhdy-dim').size >= 1));
   R.push('chunk_dim_matches=' + (document.getElementById('adhdy-hlstyle').textContent.indexOf('rgba(34,34,34,0.28)') > -1));
   R.push('nofade_with_chunks=' + (getComputedStyle(bigP).transitionProperty === 'none'));
+  A.set('ruler', true);
   var kev = new KeyboardEvent('keydown', {key: 'j', bubbles: true, cancelable: true});
   R.push('pager_step=' + !document.dispatchEvent(kev));
+  var rulerEl = document.getElementById('adhdy-ruler');
+  R.push('ruler_snaps=' + (rulerEl.classList.contains('adhdy-snap') && rulerEl.style.height !== '' && rulerEl.style.height !== '96px'));
+  document.dispatchEvent(new MouseEvent('mousemove', {clientX: 200, clientY: 400}));
+  R.push('ruler_unsnaps=' + (rulerEl.style.height === '96px'));
+  A.set('ruler', false);
   A.set('chunks', false);
   R.push('chunk_focus_cleared=' + !CSS.highlights.has('adhdy-dim'));
   A.set('chunks', true);
@@ -87,7 +93,7 @@ chromium --headless=new --disable-gpu --virtual-time-budget=3000 \
   | sed -n '/RESULTS_BEGIN/,/RESULTS_END/p' | grep '=' > "$TMP/results"
 
 cat "$TMP/results"
-TOTAL=23
+TOTAL=25
 if grep -q '=false' "$TMP/results" || [ "$(grep -c '=true' "$TMP/results")" -ne "$TOTAL" ]; then
   echo 'FAIL'; exit 1
 fi

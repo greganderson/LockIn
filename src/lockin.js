@@ -88,6 +88,10 @@
     '#adhdy-progress{position:fixed;top:0;left:0;height:4px;width:0;background:' + ACCENT + ';z-index:2147483645;transition:width .1s linear}',
     /* reading ruler */
     '#adhdy-ruler{position:fixed;left:0;width:100vw;height:96px;pointer-events:none;z-index:2147483640;box-shadow:0 0 0 200vmax rgba(15,12,35,.32);border-top:1px solid rgba(124,92,255,.55);border-bottom:1px solid rgba(124,92,255,.55)}',
+    /* while keyboard-paging, the ruler snaps to wrap the current chunk and
+       eases back to the mouse band on the next real mouse move */
+    '#adhdy-ruler.adhdy-snap{transition:top .25s ease,height .25s ease}',
+    '@media (prefers-reduced-motion:reduce){#adhdy-ruler.adhdy-snap{transition:none}}',
     /* link guard */
     'html.adhdy-guard a[href]{color:inherit!important;text-decoration:underline dotted rgba(124,92,255,.65)!important}',
     /* calm — freeze motion (confetti exempted below) */
@@ -282,6 +286,7 @@
     var rect = ranges ? ranges[ci].getBoundingClientRect()
       : block.getBoundingClientRect();
     pagerHold = Date.now() + 900;
+    rulerSnapTo(rect);
     try {
       scrollBy({ top: rect.top - innerHeight * 0.38, behavior: motionOK ? 'smooth' : 'auto' });
     } catch (e) { scrollBy(0, rect.top - innerHeight * 0.38); }
@@ -341,11 +346,38 @@
   on(doc, 'mousemove', focusMove, { passive: true });
 
   // -- reading ruler --------------------------------------------------------
-  var ruler = null;
+  var ruler = null, rulerSnapT = 0, lastMX = -1, lastMY = -1;
   function rulerMove(e) {
+    var t = e.touches && e.touches[0];
+    var y = t ? t.clientY : e.clientY;
+    var x = t ? t.clientX : e.clientX;
+    if (typeof y !== 'number') return;
+    // Track travel so a tiny jiggle (brushing the mouse while typing j/k)
+    // doesn't knock the ruler off a snapped chunk.
+    var travel = lastMX < 0 ? 0 : Math.abs((x || 0) - lastMX) + Math.abs(y - lastMY);
+    lastMX = x || 0; lastMY = y;
     if (!ruler) return;
-    var y = e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY;
-    if (typeof y === 'number') ruler.style.top = (y - 48) + 'px';
+    if (ruler.classList.contains('adhdy-snap')) {
+      if (travel < 6) return;
+      // ease back to the normal band at the cursor, then track instantly
+      ruler.style.height = '96px';
+      ruler.style.top = (y - 48) + 'px';
+      clearTimeout(rulerSnapT);
+      rulerSnapT = setTimeout(function () {
+        if (ruler) ruler.classList.remove('adhdy-snap');
+      }, 280);
+      return;
+    }
+    ruler.style.top = (y - 48) + 'px';
+  }
+  function rulerSnapTo(rect) {
+    // Wrap the chunk at its post-scroll position: pagerStep lands the chunk's
+    // top at 38% of the viewport, so park the ruler there and let the text
+    // glide into it.
+    if (!ruler) return;
+    ruler.classList.add('adhdy-snap');
+    ruler.style.top = (innerHeight * 0.38 - 8) + 'px';
+    ruler.style.height = (rect.height + 16) + 'px';
   }
   features.ruler = {
     label: 'Ruler',
@@ -356,7 +388,11 @@
       ruler.style.top = (innerHeight * 0.35) + 'px';
       doc.body.appendChild(ruler);
     },
-    off: function () { if (ruler) ruler.remove(); ruler = null; }
+    off: function () {
+      clearTimeout(rulerSnapT);
+      if (ruler) ruler.remove();
+      ruler = null;
+    }
   };
   on(doc, 'mousemove', rulerMove, { passive: true });
   on(doc, 'touchmove', rulerMove, { passive: true });

@@ -21,7 +21,7 @@ and click the bookmark.
 |---|---|
 | **Focus** | Dims everything except the paragraph you're reading; follows scroll and mouse. With Chunks on, the spotlight narrows to the single chunk you're on (via the CSS Custom Highlight API; older browsers fall back to whole-paragraph highlighting). |
 | **Pager keys** | With Focus on: `j` / `space` step the spotlight forward chunk-by-chunk, `k` / `shift+space` step back, gliding the page as you go. Ignored while typing; at the article's ends space reverts to normal scrolling. |
-| **Ruler** | A reading band that follows the cursor, shading the rest of the page. |
+| **Ruler** | A reading band that follows the cursor, shading the rest of the page. On a `j`/`k` step it snaps to wrap the current chunk exactly (however tall), then eases back to the cursor band on the next real mouse move — small jiggles don't knock it loose. |
 | **Bionic** | Bolds the first ~40% of each word to give the eye anchor points. |
 | **Chunks** | Splits paragraphs longer than ~240 chars at sentence boundaries. |
 | **Comfy** | Narrow column + relaxed line height, with sliders for text size, line spacing, and column width. |
