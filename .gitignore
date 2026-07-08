@@ -1,0 +1,8 @@
+# Build output (regenerate with `node build.js`).
+# index.html is also generated but stays tracked so the repo works on
+# GitHub Pages without a build step.
+dist/
+
+node_modules/
+*.log
+.DS_Store

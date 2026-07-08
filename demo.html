@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Widget REST API v2 — Reference</title>
+<style>
+  body { margin: 0; font: 15px/1.5 Georgia, serif; color: #222; background: #fafafa; }
+  .banner { position: fixed; bottom: 0; left: 0; right: 0; background: #123; color: #fff;
+            padding: 14px; text-align: center; z-index: 10; }
+  nav.top { background: #123; color: #fff; padding: 10px 24px; }
+  nav.top a { color: #9cf; margin-right: 16px; text-decoration: none; }
+  .layout { display: flex; gap: 24px; max-width: 1200px; margin: 0 auto; padding: 24px; }
+  aside { width: 220px; flex-shrink: 0; background: #eee; padding: 16px; height: fit-content; }
+  article { flex: 1; background: #fff; padding: 32px; border: 1px solid #ddd; }
+  pre { background: #f4f2ee; padding: 12px; overflow-x: auto; font-size: 13px; }
+  code { font-family: monospace; }
+  h1 { font-size: 1.9em; } h2 { margin-top: 2em; border-bottom: 1px solid #eee; padding-bottom: .3em; }
+  footer { text-align: center; color: #888; padding: 40px; }
+</style>
+</head>
+<body>
+<nav class="top" role="navigation">
+  <a href="#">Home</a><a href="#">Products</a><a href="#">Docs</a><a href="#">Pricing</a><a href="#">Blog</a><a href="#">Support</a>
+</nav>
+<div class="layout">
+<aside role="complementary">
+  <h3>On this page</h3>
+  <ul>
+    <li>Introduction</li><li>Authentication</li><li>Rate limiting</li>
+    <li>Pagination</li><li>Error handling</li><li>Endpoints</li><li>Webhooks</li>
+  </ul>
+  <h3>Related</h3>
+  <ul><li>SDK for Python</li><li>SDK for Node</li><li>Changelog</li><li>Status page</li></ul>
+</aside>
+<article>
+<h1>Widget REST API v2 — Complete Reference</h1>
+
+<p>The Widget REST API provides programmatic access to all resources within the Widget platform, including widgets, widget collections, widget templates, and the associated metadata records that describe the provenance, lifecycle state, and ownership of each of those resources, and this document constitutes the authoritative reference for version 2 of the interface, which supersedes version 1 in all respects except where explicitly noted in the migration appendix. All requests must be made over HTTPS to the base URL <code>https://api.example.com/v2</code>, and any request made over plain HTTP will be rejected with a redirect that clients must not follow automatically when the request contains credentials, since doing so could expose those credentials to intermediaries. The API accepts and returns JSON exclusively, with the exception of the bulk export endpoints, which stream newline-delimited JSON, and the media upload endpoints, which accept multipart form data in the manner described in the section on binary payloads later in this document.</p>
+
+<h2>Authentication</h2>
+<p>Every request to the Widget API must include an <code>Authorization</code> header bearing a valid API key or OAuth 2.0 access token, and the choice between these two mechanisms depends on whether you are building a server-side integration that acts on behalf of your own organization, in which case an API key is simpler and entirely sufficient, or a third-party application that acts on behalf of other users, in which case you must implement the full OAuth 2.0 authorization code flow with PKCE as described in RFC 7636. API keys are created in the dashboard under Settings, then API, then Keys, and each key is shown exactly once at creation time, so you must store it in a secret manager immediately because there is no mechanism for retrieving the plaintext value afterwards, only for rotating the key, which invalidates the previous value after a configurable grace period that defaults to twenty-four hours.</p>
+<pre><code>curl https://api.example.com/v2/widgets \
+  -H "Authorization: Bearer wk_live_4eC39HqLyjWDarjtT1zdp7dc"</code></pre>
+<p>Tokens expire after one hour and must be refreshed using the refresh token grant, and note that refresh tokens are single-use in this API, meaning each refresh operation returns a new refresh token and invalidates the old one, a design known as refresh token rotation which limits the damage of a leaked token but which also means your token storage must be updated atomically after every refresh to avoid a situation in which two concurrent processes race to use the same refresh token and one of them is left holding an invalidated credential.</p>
+
+<h2>Rate limiting</h2>
+<p>The API enforces rate limits on a per-key basis using a token bucket algorithm with a sustained rate of one hundred requests per minute and a burst capacity of two hundred requests, and when you exceed these limits the API responds with HTTP status 429 and a <code>Retry-After</code> header indicating the number of seconds you should wait before retrying, which your client must honor because repeated violations within a rolling ten-minute window will result in a temporary suspension of the key lasting fifteen minutes. Every response includes the headers <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, and <code>X-RateLimit-Reset</code> so that well-behaved clients can pace themselves proactively rather than reactively, and we strongly recommend implementing exponential backoff with jitter for all retry logic rather than fixed-interval retries, since fixed intervals cause synchronized retry storms when many clients are affected by the same transient failure at the same time.</p>
+
+<h2>Pagination</h2>
+<p>All list endpoints are paginated using cursor-based pagination rather than offset-based pagination, a decision made because offset pagination produces inconsistent results when the underlying collection is modified between page requests, which happens frequently in practice. Each list response contains a <code>data</code> array and a <code>next_cursor</code> field, and when <code>next_cursor</code> is non-null you may pass it as the <code>cursor</code> query parameter of a subsequent request to retrieve the next page, continuing until <code>next_cursor</code> is null, which indicates that you have reached the end of the collection. The default page size is twenty-five items and the maximum is one hundred, controlled by the <code>limit</code> parameter, and note that the cursor encodes the sort order and filter parameters of the original request, so you must not change any other query parameters while paginating because the API will respond with error code <code>cursor_mismatch</code> if the parameters accompanying a cursor differ from those with which it was issued.</p>
+
+<h2>Error handling</h2>
+<p>Errors are returned with an appropriate HTTP status code and a JSON body containing a machine-readable <code>code</code>, a human-readable <code>message</code>, and where applicable a <code>param</code> field identifying the specific request parameter that caused the failure, and your integration should branch on the <code>code</code> field rather than parsing the message text, because messages are subject to change without notice and are not covered by our versioning policy. Client errors in the 4xx range indicate a problem with the request that will not be resolved by retrying, with the specific exceptions of 408, 409, and 429, which may be retried according to the guidance in the rate limiting section, while server errors in the 5xx range indicate a problem on our side that is usually transient, and all 5xx responses may be retried with exponential backoff provided the request is idempotent, which all GET, PUT, and DELETE requests are by definition, and which POST requests can be made to be by supplying an <code>Idempotency-Key</code> header containing a unique value that we will remember for twenty-four hours.</p>
+
+<h2>Endpoints</h2>
+<p>The core resource is the widget, accessed at <code>/v2/widgets</code>, which supports the standard verbs: GET on the collection lists widgets, POST creates a widget, GET on <code>/v2/widgets/{id}</code> retrieves a single widget, PATCH updates it partially, PUT replaces it entirely, and DELETE removes it, subject to the caveat that deletion is soft by default, moving the widget to a trashed state from which it can be restored for thirty days via the <code>/v2/widgets/{id}/restore</code> endpoint before being permanently purged by a background process whose timing is not guaranteed. Widget collections live at <code>/v2/collections</code> and behave analogously, with the additional nested route <code>/v2/collections/{id}/widgets</code> for managing membership, and note that a widget may belong to at most fifty collections simultaneously, a limit that exists for performance reasons and that will produce error code <code>collection_limit_exceeded</code> when violated.</p>
+<pre><code>POST /v2/widgets
+{
+  "name": "Flux capacitor",
+  "sku": "FLX-88",
+  "metadata": { "voltage": "1.21GW" }
+}</code></pre>
+
+<h2>Webhooks</h2>
+<p>Webhooks allow your application to receive notifications when resources change instead of polling, and you configure them in the dashboard or via the <code>/v2/webhook_endpoints</code> API by supplying a URL and a list of event types, after which we will deliver an HTTP POST to that URL for each matching event, signed with an HMAC-SHA256 signature carried in the <code>Widget-Signature</code> header, which you must verify using your endpoint's signing secret before trusting the payload, because anyone on the internet can send requests to your endpoint URL. Deliveries are retried with exponential backoff for up to seventy-two hours if your endpoint does not respond with a 2xx status within ten seconds, and events are delivered at least once but possibly more than once, so your handler must be idempotent, typically by recording processed event identifiers, and events may arrive out of order under retry conditions, so your handler must not assume that the sequence of deliveries matches the sequence of occurrences.</p>
+
+<p>For questions not covered in this reference, consult the developer forum or open a support ticket, including in either case the request identifier from the <code>X-Request-Id</code> response header of any problematic call, since that identifier allows us to locate the corresponding trace in our logs within seconds rather than hours.</p>
+</article>
+</div>
+<footer>© 2026 Widget Corp. All rights reserved. Terms. Privacy. Cookies.</footer>
+<div class="banner" role="banner">🍪 We use cookies to make your experience worse. <b>Accept</b></div>
+</body>
+</html>
