@@ -1,4 +1,4 @@
-# 🧠 ADHDifier
+# 🧠 LockIn
 
 A bookmarklet that turns any wall-of-text article — API docs, tutorials, textbooks —
 into something an ADHD brain can actually get through. No extension, no install,
@@ -9,7 +9,7 @@ extension stores are blocked).
 
 1. `node build.js`
 2. Open `index.html` in a browser.
-3. Drag the **🧠 ADHDify** button to your bookmarks bar.
+3. Drag the **🧠 LockIn** button to your bookmarks bar.
 4. On any article, click the bookmark. Click again to hide/show the panel.
 
 To try it immediately, open `demo.html` (a deliberately boring API reference)
@@ -52,7 +52,7 @@ genuinely prefer it and it's strictly opt-in.
 
 ## Files
 
-- `src/adhdifier.js` — the readable source. Plain ES5-ish vanilla JS, one IIFE,
+- `src/lockin.js` — the readable source. Plain ES5-ish vanilla JS, one IIFE,
   everything namespaced `adhdy`. Also usable directly as a userscript body or
   a content script if you ever want an extension version.
 - `build.js` — strips comments/indentation (line-level only, so strings can
@@ -87,4 +87,4 @@ count, section fold, panel present, zero `adhdy` leftovers after destroy, and
 `innerText` byte-identical to the original after destroy.
 
 The public API the tests drive is exactly what the panel buttons call:
-`window.__adhdifier.set(name, bool)`, `.state()`, `.togglePanel()`, `.destroy()`.
+`window.__lockin.set(name, bool)`, `.state()`, `.togglePanel()`, `.destroy()`.

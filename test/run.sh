@@ -3,19 +3,19 @@
 # demo.html, drives the public API, and checks the assertions below.
 set -e
 cd "$(dirname "$0")/.."
-node --check src/adhdifier.js
+node --check src/lockin.js
 node build.js >/dev/null
-node --check dist/adhdifier.packed.js
+node --check dist/lockin.packed.js
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 cat > "$TMP/inject" <<EOF
 <script>window.__origText = document.querySelector('article').innerText.replace(/\s+/g,' ').trim();</script>
-<script src="$(pwd)/dist/adhdifier.packed.js"></script>
+<script src="$(pwd)/dist/lockin.packed.js"></script>
 <script>
 (function(){
-  var A = window.__adhdifier, q = function(s){return document.querySelectorAll(s).length;}, R = [];
+  var A = window.__lockin, q = function(s){return document.querySelectorAll(s).length;}, R = [];
   A.set('chunks', true);  R.push('gaps_alone=' + (q('span.adhdy-gap') > 3));
   A.set('chunks', false); R.push('gaps_removed=' + (q('span.adhdy-gap') === 0));
   A.set('bionic', true); A.set('chunks', true);
@@ -26,6 +26,7 @@ cat > "$TMP/inject" <<EOF
   bigP.dispatchEvent(new MouseEvent('mousemove',
     {bubbles: true, clientY: Math.max(10, bigP.getBoundingClientRect().top + 10)}));
   R.push('chunk_focus=' + (CSS.highlights.has('adhdy-dim') && CSS.highlights.get('adhdy-dim').size >= 1));
+  R.push('chunk_dim_matches=' + (document.getElementById('adhdy-hlstyle').textContent.indexOf('rgba(34,34,34,0.28)') > -1));
   A.set('chunks', false);
   R.push('chunk_focus_cleared=' + !CSS.highlights.has('adhdy-dim'));
   A.set('chunks', true);
@@ -78,7 +79,7 @@ chromium --headless=new --disable-gpu --virtual-time-budget=3000 \
   | sed -n '/RESULTS_BEGIN/,/RESULTS_END/p' | grep '=' > "$TMP/results"
 
 cat "$TMP/results"
-TOTAL=18
+TOTAL=19
 if grep -q '=false' "$TMP/results" || [ "$(grep -c '=true' "$TMP/results")" -ne "$TOTAL" ]; then
   echo 'FAIL'; exit 1
 fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
- * Packs src/adhdifier.js into a javascript: bookmarklet and generates:
- *   dist/adhdifier.packed.js  - comment/indent-stripped source
+ * Packs src/lockin.js into a javascript: bookmarklet and generates:
+ *   dist/lockin.packed.js  - comment/indent-stripped source
  *   dist/bookmarklet.txt      - the full javascript: URL
  *   index.html                - install page with the draggable link
  *
@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const srcPath = path.join(__dirname, 'src', 'adhdifier.js');
+const srcPath = path.join(__dirname, 'src', 'lockin.js');
 const src = fs.readFileSync(srcPath, 'utf8');
 
 let inBlock = false;
@@ -32,7 +32,7 @@ const packed = src.split('\n').map(line => {
 const bookmarklet = 'javascript:' + encodeURIComponent(packed);
 
 fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });
-fs.writeFileSync(path.join(__dirname, 'dist', 'adhdifier.packed.js'), packed);
+fs.writeFileSync(path.join(__dirname, 'dist', 'lockin.packed.js'), packed);
 fs.writeFileSync(path.join(__dirname, 'dist', 'bookmarklet.txt'), bookmarklet);
 
 const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -42,7 +42,7 @@ const page = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ADHDifier — install</title>
+<title>LockIn — install</title>
 <style>
   :root { color-scheme: light dark; }
   body { font: 16px/1.7 system-ui, sans-serif; max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem; }
@@ -61,13 +61,13 @@ const page = `<!DOCTYPE html>
 </style>
 </head>
 <body>
-<h1>🧠 ADHDifier</h1>
+<h1>🧠 LockIn</h1>
 <p>Turns any wall-of-text article — API docs, tutorials, textbooks — into something an
 ADHD brain can actually get through. Works in every desktop browser, no extension needed.</p>
 
 <h2>Install (10 seconds)</h2>
 <p>Drag this button onto your bookmarks bar:</p>
-<p><a class="drag" href="${esc(bookmarklet)}">🧠 ADHDify</a></p>
+<p><a class="drag" href="${esc(bookmarklet)}">🧠 LockIn</a></p>
 <p class="hint">Bookmarks bar hidden? Press <code>Ctrl+Shift+B</code> (<code>⌘+Shift+B</code> on Mac).
 Then, on any article, click the bookmark. Click it again to hide the panel.</p>
 
@@ -111,4 +111,4 @@ fs.writeFileSync(path.join(__dirname, 'index.html'), page);
 
 console.log('packed source : %d bytes', packed.length);
 console.log('bookmarklet   : %d bytes (URL length)', bookmarklet.length);
-console.log('wrote dist/adhdifier.packed.js, dist/bookmarklet.txt, index.html');
+console.log('wrote dist/lockin.packed.js, dist/bookmarklet.txt, index.html');

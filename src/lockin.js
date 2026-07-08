@@ -1,5 +1,5 @@
 /*
- * ADHDifier — make any article ADHD-friendly.
+ * LockIn — make any article ADHD-friendly.
  * Runs as a bookmarklet (see build.js), a userscript, or a plain <script>.
  * Everything is toggleable, reversible, and namespaced with "adhdy".
  */
@@ -7,11 +7,11 @@
   'use strict';
 
   // Already loaded? Just show/hide the panel instead of injecting twice.
-  if (window.__adhdifier) { window.__adhdifier.togglePanel(); return; }
+  if (window.__lockin) { window.__lockin.togglePanel(); return; }
 
   var WPM = 230;              // reading speed for the "min left" estimate
   var CHUNK_MIN = 160;        // min chars between inserted paragraph breaks
-  var STORE_KEY = 'adhdifier-settings';
+  var STORE_KEY = 'adhdifier-settings'; // pre-rename key kept so upgrades keep settings
 
   var doc = document, html = doc.documentElement;
   var listeners = [];         // [target, type, fn] so teardown can unbind all
@@ -56,16 +56,13 @@
   /* ----------------------------------------------------------------- style */
 
   var ACCENT = '#7c5cff';
+  var DIM = 0.28;   // Focus dim strength, shared by paragraphs and chunks
   var style = doc.createElement('style');
   style.id = 'adhdy-style';
   style.textContent = [
     /* focus spotlight */
-    'html.adhdy-focus .adhdy-block{opacity:.28;transition:opacity .25s ease}',
+    'html.adhdy-focus .adhdy-block{opacity:' + DIM + ';transition:opacity .25s ease}',
     'html.adhdy-focus .adhdy-block.adhdy-cur{opacity:1}',
-    /* chunk-level focus: non-current chunks of the current paragraph get
-       faded text via the Custom Highlight API (paint-only, no DOM change).
-       The rgba line is a fallback for browsers without color-mix. */
-    '::highlight(adhdy-dim){color:rgba(150,150,150,.6);color:color-mix(in srgb,currentColor 28%,transparent)}',
     /* bionic bolding */
     'b.adhdy-bio{font-weight:700;color:inherit}',
     /* chunk gaps */
@@ -186,6 +183,23 @@
   // Highlight API. Paint-only — no DOM mutation, so reversibility holds.
   // Browsers without the API keep whole-paragraph highlighting.
   var canHl = typeof Highlight === 'function' && window.CSS && CSS.highlights;
+  // The fade color is computed from the paragraph's real text color at the
+  // same alpha Focus uses for opacity, so a dimmed chunk looks exactly like
+  // a dimmed paragraph. (currentColor inside ::highlight resolves
+  // inconsistently across browsers, so we can't do this in static CSS.)
+  var hlStyle = doc.createElement('style');
+  hlStyle.id = 'adhdy-hlstyle';
+  doc.head.appendChild(hlStyle);
+  function setChunkDimColor(el) {
+    var m = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/.exec(getComputedStyle(el).color);
+    var faded = m ?
+      'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + DIM + ')' :
+      'rgba(128,128,128,' + DIM + ')';
+    if (hlStyle.__c !== faded) {
+      hlStyle.__c = faded;
+      hlStyle.textContent = '::highlight(adhdy-dim){color:' + faded + '}';
+    }
+  }
   function clearChunkDim() {
     if (canHl) CSS.highlights.delete('adhdy-dim');
   }
@@ -219,6 +233,7 @@
         Math.min(Math.abs(mid - y), Math.abs(rect.top - y));
       if (d < bestD) { bestD = d; bestI = i; }
     });
+    setChunkDimColor(curBlock);
     var hl = new Highlight();
     ranges.forEach(function (rg, i) { if (i !== bestI) hl.add(rg); });
     CSS.highlights.set('adhdy-dim', hl);
@@ -687,13 +702,13 @@
   var mini = doc.createElement('div');
   mini.id = 'adhdy-mini';
   mini.textContent = '🧠';
-  mini.title = 'ADHDifier';
+  mini.title = 'LockIn';
 
   var head = doc.createElement('div');
   head.className = 'adhdy-head';
   var title = doc.createElement('span');
   title.className = 'adhdy-title';
-  title.textContent = '🧠 ADHDifier';
+  title.textContent = '🧠 LockIn';
   var minBtn = doc.createElement('button');
   minBtn.className = 'adhdy-x';
   minBtn.textContent = '–';
@@ -837,11 +852,11 @@
     stopTimer();
     doc.querySelectorAll('.adhdy-confetti').forEach(function (el) { el.remove(); });
     if (toastEl) toastEl.remove();
-    panel.remove(); mini.remove(); style.remove();
-    delete window.__adhdifier;
+    panel.remove(); mini.remove(); style.remove(); hlStyle.remove();
+    delete window.__lockin;
   }
 
-  window.__adhdifier = {
+  window.__lockin = {
     set: setFeature,
     state: function () { return Object.assign({}, state); },
     togglePanel: function () {
