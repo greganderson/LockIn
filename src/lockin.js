@@ -107,8 +107,8 @@
     /* panel */
     '#adhdy-panel{all:initial;position:fixed;top:16px;right:16px;z-index:2147483646;font:13px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--adhdy-text);background:var(--adhdy-bg);border:1px solid var(--adhdy-border);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.45);padding:12px;width:216px;box-sizing:border-box}',
     '#adhdy-panel *{all:revert;font:inherit;color:inherit;box-sizing:border-box;margin:0;padding:0}',
-    '#adhdy-panel .adhdy-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}',
-    '#adhdy-panel .adhdy-title{font-weight:700;font-size:14px;flex:1}',
+    '#adhdy-panel .adhdy-head{display:flex;align-items:center;gap:6px;margin-bottom:10px;cursor:grab;touch-action:none}',
+    '#adhdy-panel .adhdy-title{font-weight:700;font-size:14px;flex:1;user-select:none}',
     '#adhdy-panel .adhdy-x{cursor:pointer;background:none;border:none;color:var(--adhdy-muted);font-size:15px;padding:2px 5px;border-radius:6px}',
     '#adhdy-panel .adhdy-x:hover{background:var(--adhdy-hover);color:#fff}',
     '#adhdy-panel .adhdy-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}',
@@ -141,7 +141,7 @@
     '#adhdy-map .adhdy-mrow.adhdy-sub{padding-left:20px}',
     '#adhdy-map .adhdy-mrow.adhdy-read{color:var(--adhdy-dim2)}',
     '#adhdy-map .adhdy-mrow.adhdy-now{background:rgba(var(--adhdy-argb),.28);color:#fff;font-weight:600}',
-    '#adhdy-mini{all:initial;position:fixed;top:16px;right:16px;z-index:2147483646;width:40px;height:40px;border-radius:50%;background:' + ACCENT + ';color:#fff;font:20px/40px system-ui;text-align:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);display:none}',
+    '#adhdy-mini{all:initial;position:fixed;top:16px;right:16px;z-index:2147483646;width:40px;height:40px;border-radius:50%;background:' + ACCENT + ';color:#fff;font:20px/40px system-ui;text-align:center;cursor:grab;touch-action:none;box-shadow:0 4px 16px rgba(0,0,0,.4);display:none}',
     /* mobile: panel becomes a bottom sheet, toast moves to the top */
     '@media (max-width:640px){' +
       '#adhdy-panel{top:auto;bottom:10px;left:10px;right:10px;width:auto;max-height:60vh;overflow-y:auto}' +
@@ -542,11 +542,12 @@
 
   // -- comfy text -----------------------------------------------------------
   var PREFS_DEF = { fs: 1.05, lh: 1.8, w: 70 };
+  var COMFY_MAX_W = 200; // slider's top value; at max the width cap lifts entirely
   var prefs = Object.assign({}, PREFS_DEF);
   function applyPrefs() {
     root.style.setProperty('--adhdy-fs', prefs.fs + 'em');
     root.style.setProperty('--adhdy-lh', prefs.lh);
-    root.style.setProperty('--adhdy-w', prefs.w + 'ch');
+    root.style.setProperty('--adhdy-w', prefs.w >= COMFY_MAX_W ? 'none' : prefs.w + 'ch');
   }
   features.comfy = {
     label: 'Comfy',
@@ -962,7 +963,7 @@
   var slInputs = {};
   [{ key: 'fs', icon: 'A',  min: 0.9, max: 1.4, step: 0.05, name: 'Text size' },
    { key: 'lh', icon: '↕', min: 1.4, max: 2.4, step: 0.1,  name: 'Line spacing' },
-   { key: 'w',  icon: '⇔', min: 45,  max: 95,  step: 5,    name: 'Column width' }
+   { key: 'w',  icon: '⇔', min: 45,  max: COMFY_MAX_W, step: 5, name: 'Column width' }
   ].forEach(function (s) {
     var lab = doc.createElement('label');
     lab.title = s.name;
@@ -1050,10 +1051,88 @@
     mini.style.display = 'block';
   });
   mini.addEventListener('click', function () {
+    if (miniMoved) { miniMoved = false; return; } // that click ended a drag, not a tap
     mini.style.display = 'none';
     panel.style.display = 'block';
   });
   closeBtn.addEventListener('click', destroy);
+
+  /* ------------------------------------------------------------- drag */
+
+  // Drag the panel by its header. Mobile (<=640px) uses a fixed bottom
+  // sheet layout instead (see the media query above), so dragging is
+  // desktop-only.
+  var dragging = false, dragOffX = 0, dragOffY = 0;
+  function dragStart(e) {
+    if (e.target.closest && e.target.closest('.adhdy-x')) return;
+    if (innerWidth <= 640) return;
+    var r = panel.getBoundingClientRect();
+    dragging = true;
+    dragOffX = e.clientX - r.left;
+    dragOffY = e.clientY - r.top;
+    panel.style.left = r.left + 'px';
+    panel.style.top = r.top + 'px';
+    panel.style.right = 'auto';
+    head.style.cursor = 'grabbing';
+    try { head.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  }
+  function dragMove(e) {
+    if (!dragging) return;
+    var x = Math.min(Math.max(0, e.clientX - dragOffX), innerWidth - panel.offsetWidth);
+    var y = Math.min(Math.max(0, e.clientY - dragOffY), innerHeight - panel.offsetHeight);
+    panel.style.left = x + 'px';
+    panel.style.top = y + 'px';
+  }
+  function dragEnd() {
+    dragging = false;
+    head.style.cursor = 'grab';
+  }
+  on(head, 'pointerdown', dragStart);
+  on(doc, 'pointermove', dragMove);
+  on(doc, 'pointerup', dragEnd);
+  on(window, 'resize', function () {
+    // Hand layout back to the mobile bottom-sheet CSS once we cross the
+    // breakpoint, undoing any inline position left over from a desktop drag.
+    if (innerWidth <= 640) {
+      panel.style.left = ''; panel.style.top = ''; panel.style.right = '';
+    }
+  }, { passive: true });
+
+  // The minimized bubble is itself the click target, so a drag is told
+  // apart from a tap by a small movement threshold; crossing it suppresses
+  // the click that would otherwise fire on release (handled above).
+  var miniDragging = false, miniMoved = false;
+  var miniStartX = 0, miniStartY = 0, miniOffX = 0, miniOffY = 0;
+  function miniDragStart(e) {
+    var r = mini.getBoundingClientRect();
+    miniDragging = true;
+    miniMoved = false;
+    miniStartX = e.clientX; miniStartY = e.clientY;
+    miniOffX = e.clientX - r.left;
+    miniOffY = e.clientY - r.top;
+    try { mini.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  function miniDragMove(e) {
+    if (!miniDragging) return;
+    if (!miniMoved) {
+      if (Math.abs(e.clientX - miniStartX) + Math.abs(e.clientY - miniStartY) < 4) return;
+      miniMoved = true;
+      mini.style.right = 'auto';
+      mini.style.bottom = 'auto';
+    }
+    var x = Math.min(Math.max(0, e.clientX - miniOffX), innerWidth - mini.offsetWidth);
+    var y = Math.min(Math.max(0, e.clientY - miniOffY), innerHeight - mini.offsetHeight);
+    mini.style.left = x + 'px';
+    mini.style.top = y + 'px';
+    e.preventDefault();
+  }
+  function miniDragEnd() {
+    miniDragging = false;
+  }
+  on(mini, 'pointerdown', miniDragStart);
+  on(doc, 'pointermove', miniDragMove);
+  on(doc, 'pointerup', miniDragEnd);
 
   /* ------------------------------------------------------- state & wiring */
 
