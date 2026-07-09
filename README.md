@@ -10,4 +10,4 @@ I was browsing through a site one of my students made (https://adhd.doodleink.ne
 
 ---
 
-This tool was purely vibe coded (minus the readme). If you try to use this and have some ideas for features, feel free to create an issue and I'll see if I can ~manually build it myself~ vibe code it!
+This tool was purely vibe coded (minus the readme). Also if you use this and have some ideas for features, feel free to create an issue and I'll see if I can get it added!
